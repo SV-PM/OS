@@ -1,3 +1,58 @@
+#client
+
+#include<stdio.h>
+#include<unistd.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<stdlib.h>
+#include<ctype.h>
+
+char myfifo[20]="fifo", myfifo1[20]="fifo1";
+
+void main(){
+    int fd, fd1, chr=0, word=0, line=0, inword=0;
+    char msg[512], msg1[512];
+
+    fd = open("myfifo", O_RDONLY);
+    read(fd, msg, sizeof(msg));
+    printf("\n msg recvd from server=%s \n", msg);
+
+    for(int i=0; msg[i]!='\0'; i++){
+        char ch = msg[i];
+        chr++;
+        if(ch=='\n'){
+            line++;
+        }
+        if(ch==' '){
+            inword=0;
+        }else if(inword==0){
+            word++;
+            inword=1;
+        }
+    }
+    line++;
+
+    FILE *fp;
+    fp = fopen("file.txt", "w");
+    if(fp==NULL){
+        printf("cant open file");
+    }
+    fprintf(fp, "No of lines=%d \n", line);
+    fprintf(fp, "No of words=%d \n", word);
+    fprintf(fp, "No of characters=%d \n", chr);
+    fclose(fp);
+
+    sprintf(msg1, "No of lines=%d \n No of words=%d \n No of Characters=%d \n", line, word, chr);
+
+    fd1 = open("myfifo1", O_WRONLY);
+    write(fd1, msg1, sizeof(msg1));
+
+    unlink("myfifo");
+    unlink("myfifo1");
+}
+
+
+#server
 #include<stdio.h>
 #include<unistd.h>
 #include<sys/stat.h>
