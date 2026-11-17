@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int n, head, diskSize, dir;
+int req[50], sorted[50];
+int cur, total;
+
+void move(int to)
+{
+    printf("%d -> %d  (movement = %d)\n", cur, to, abs(to - cur));
+    total += abs(to - cur);
+    cur = to;
+}
+
+void sstf()
+{
+    int done[50] = {0};
+    cur = head;
+    total = 0;
+    printf("\n--- SSTF ---\n");
+
+    for (int count = 0; count < n; count++)
+    {
+        int best = -1;
+        for (int i = 0; i < n; i++)
+        {
+            if (!done[i] && (best == -1 || abs(req[i] - cur) < abs(req[best] - cur)))
+                best = i;
+        }
+        done[best] = 1;
+        move(req[best]);
+    }
+    printf("Total head movement = %d\n", total);
+}
+
+void scan()
+{
+    cur = head;
+    total = 0;
+    printf("\n--- SCAN ---\n");
+
+    if (dir == 0)   // towards track 0 first (away from spindle)
+    {
+        for (int i = n - 1; i >= 0; i--)
+            if (sorted[i] <= head) move(sorted[i]);
+        move(0);
+        for (int i = 0; i < n; i++)
+            if (sorted[i] > head) move(sorted[i]);
+    }
+    else            // towards higher tracks first
+    {
+        for (int i = 0; i < n; i++)
+            if (sorted[i] >= head) move(sorted[i]);
+        move(diskSize - 1);
+        for (int i = n - 1; i >= 0; i--)
+            if (sorted[i] < head) move(sorted[i]);
+    }
+    printf("Total head movement = %d\n", total);
+}
+
+void clook()
+{
+    cur = head;
+    total = 0;
+    printf("\n--- C-LOOK ---\n");
+
+    if (dir == 0)   // towards track 0 first
+    {
+        for (int i = n - 1; i >= 0; i--)
+            if (sorted[i] <= head) move(sorted[i]);
+        for (int i = n - 1; i >= 0; i--)     // first move here is the jump
+            if (sorted[i] > head) move(sorted[i]);
+    }
+    else            // towards higher tracks first
+    {
+        for (int i = 0; i < n; i++)
+            if (sorted[i] >= head) move(sorted[i]);
+        for (int i = 0; i < n; i++)          // first move here is the jump
+            if (sorted[i] < head) move(sorted[i]);
+    }
+    printf("Total head movement = %d\n", total);
+}
+
+int main()
+{
+    printf("Enter number of requests: ");
+    scanf("%d", &n);
+
+    printf("Enter the request queue:\n");
+    for (int i = 0; i < n; i++)
+    {
+        scanf("%d", &req[i]);
+        sorted[i] = req[i];
+    }
+
+    printf("Enter initial head position: ");
+    scanf("%d", &head);
+
+    printf("Enter total number of tracks (e.g. 200): ");
+    scanf("%d", &diskSize);
+
+    printf("Direction (0 = towards track 0 / away from spindle, 1 = towards higher tracks): ");
+    scanf("%d", &dir);
+
+    // sort the copy (bubble sort)
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - i - 1; j++)
+            if (sorted[j] > sorted[j + 1])
+            {
+                int t = sorted[j];
+                sorted[j] = sorted[j + 1];
+                sorted[j + 1] = t;
+            }
+
+    sstf();
+    scan();
+    clook();
+
+    return 0;
+}
