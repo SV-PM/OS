@@ -1,4 +1,32 @@
-#client
+#include<stdio.h>
+#include<unistd.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<stdlib.h>
+
+char myfifo[20]="fifo", myfifo1[20]="fifo1";
+
+void main(){
+    int fd, fd1;
+    char buff[512]="HI \nwelcome to svpmcoe \nBye", buff1[512];
+
+    mkfifo("myfifo", 0666);
+    mkfifo("myfifo1", 0666);
+
+    fd = open("myfifo", O_WRONLY);
+    write(fd, buff, sizeof(buff));
+
+    fd1 = open("myfifo1", O_RDONLY);
+    read(fd1, buff1, sizeof(buff1));
+    printf("\n msg from client is=%s \n", buff1);
+
+    unlink("myfifo");
+    unlink("myfifo1");
+}
+
+
+
+
 
 #include<stdio.h>
 #include<unistd.h>
@@ -46,34 +74,6 @@ void main(){
 
     fd1 = open("myfifo1", O_WRONLY);
     write(fd1, msg1, sizeof(msg1));
-
-    unlink("myfifo");
-    unlink("myfifo1");
-}
-
-
-#server
-#include<stdio.h>
-#include<unistd.h>
-#include<sys/stat.h>
-#include<fcntl.h>
-#include<stdlib.h>
-
-char myfifo[20]="fifo", myfifo1[20]="fifo1";
-
-void main(){
-    int fd, fd1;
-    char buff[512]="HI \nwelcome to svpmcoe \nBye", buff1[512];
-
-    mkfifo("myfifo", 0666);
-    mkfifo("myfifo1", 0666);
-
-    fd = open("myfifo", O_WRONLY);
-    write(fd, buff, sizeof(buff));
-
-    fd1 = open("myfifo1", O_RDONLY);
-    read(fd1, buff1, sizeof(buff1));
-    printf("\n msg from client is=%s \n", buff1);
 
     unlink("myfifo");
     unlink("myfifo1");
