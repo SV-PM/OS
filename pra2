@@ -1,0 +1,151 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+void sortArray(int arr[], int n)
+{
+    int i, j, temp;
+    for (i = 0; i < n - 1; i++)
+    {
+        for (j = 0; j < n - i - 1; j++)
+        {
+            if (arr[j] > arr[j + 1])
+            {
+                temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void displayArray(int arr[], int n)
+{
+    int i;
+    for (i = 0; i < n; i++)
+    {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+int main()
+{
+    int n, i;
+    int arr[100];
+
+    printf(" \n PROCESS CONTROL SYSTEM CALLS\n");
+    printf("\nEnter number of integers: ");
+    scanf("%d", &n);
+
+    if (n <= 0 || n > 100)
+    {
+        printf("Invalid number of integers.\n");
+        return 1;
+    }
+
+    printf("Enter %d integers:\n", n);
+    for (i = 0; i < n; i++)
+    {
+        scanf("%d", &arr[i]);
+    }
+
+    printf("\nOriginal array: ");
+    displayArray(arr, n);
+
+    /* FORK DEMONSTRATION */
+    pid_t pid = fork();
+
+    if (pid < 0)
+    {
+        perror("fork failed");
+        return 1;
+    }
+
+    if (pid == 0)
+    {
+        printf("\nCHILD PROCESS\n");
+        printf("Child Process ID : %d\n", getpid());
+        printf("Parent Process ID : %d\n", getppid());
+        printf("Child is sorting the array...\n");
+        sortArray(arr, n);
+        printf("Array sorted by CHILD: ");
+        displayArray(arr, n);
+        printf("Child process completed.\n");
+        exit(0);
+    }
+    else
+    {
+        printf("\nPARENT PROCESS\n");
+        printf("Parent Process ID : %d\n", getpid());
+        printf("Child Process ID : %d\n", pid);
+        printf("Parent is sorting the array...\n");
+        sortArray(arr, n);
+        printf("Array sorted by PARENT: ");
+        displayArray(arr, n);
+        wait(NULL);
+        printf("\nParent: Child process has completed.\n");
+    }
+
+    /* ZOMBIE DEMONSTRATION */
+    printf("\n ZOMBIE PROCESS DEMONSTRATION\n");
+    pid_t zombie_pid = fork();
+
+    if (zombie_pid < 0)
+    {
+        perror("fork failed");
+        return 1;
+    }
+
+    if (zombie_pid == 0)
+    {
+        printf("Zombie Child: PID = %d\n", getpid());
+        printf("Zombie Child is exiting...\n");
+        exit(0);
+    }
+    else
+    {
+        printf("Zombie Parent: PID = %d\n", getpid());
+        printf("Child PID = %d\n", zombie_pid);
+        printf("\nChild has exited but parent has not called wait().\n");
+        printf("The child is temporarily in ZOMBIE state.\n");
+        printf("\nWaiting 10 seconds so you can observe the zombie...\n");
+        sleep(10);
+        wait(NULL);
+        printf("\nZombie process has been cleaned using wait().\n");
+    }
+
+    /* ORPHAN DEMONSTRATION */
+    printf(" \n ORPHAN PROCESS DEMONSTRATION\n");
+    pid_t orphan_pid = fork();
+
+    if (orphan_pid < 0)
+    {
+        perror("fork failed");
+        return 1;
+    }
+
+    if (orphan_pid == 0)
+    {
+        printf("\nOrphan Child Started\n");
+        printf("Child PID : %d\n", getpid());
+        printf("Original Parent : %d\n", getppid());
+        sleep(5);
+        printf("\nAfter parent terminates:\n");
+        printf("Child PID : %d\n", getpid());
+        printf("New Parent PID : %d\n", getppid());
+        printf("This child is an ORPHAN process.\n");
+        exit(0);
+    }
+    else
+    {
+        printf("Orphan Parent PID : %d\n", getpid());
+        printf("Orphan Child PID : %d\n", orphan_pid);
+        printf("Parent is terminating now...\n");
+        exit(0);
+    }
+
+    return 0;
+}
