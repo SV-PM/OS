@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int pipe1[2];   // Parent -> Child (sends filename)
+    int pipe2[2];   // Child -> Parent (sends file content)
+    pid_t pid;
+    char buffer[1024];
+
+    // Create both pipes
+    if (pipe(pipe1) == -1 || pipe(pipe2) == -1)
+    {
+        perror("pipe failed");
+        exit(1);
+    }
+
+    pid = fork();
+
+    if (pid < 0)
+    {
+        perror("fork failed");
+        exit(1);
+    }
+
+    if (pid == 0)
+    {
+        // ---------- CHILD PROCESS ----------
+        char filename[256];
+
+        close(pipe1[1]);   // Child doesn't write to pipe1
+        close(pipe2[0]);   // Child doesn't read from pipe2
+
+        // Step 1: Read filename sent by parent
+        read(pipe1[0], filename, sizeof(filename));
+
+        // Step 2: Open and read the file
+        FILE *fp = fopen(filename, "r");
+        if (fp == NULL)
+        {
+            strcpy(buffer, "ERROR: Could not open file.\n");
+        }
+        else
+        {
+            int n = fread(buffer, 1, sizeof(buffer) - 1, fp);
+            buffer[n] = '\0';
+            fclose(fp);
+        }
+
+        // Step 3: Send file content back to parent
+        write(pipe2[1], buffer, strlen(buffer) + 1);
+
+        close(pipe1[0]);
+        close(pipe2[1]);
+        exit(0);
+    }
+    else
+    {
+        // ---------- PARENT PROCESS ----------
+        char filename[256];
+
+        close(pipe1[0]);   // Parent doesn't read from pipe1
+        close(pipe2[1]);   // Parent doesn't write to pipe2
+
+        printf("Enter filename to read: ");
+        scanf("%s", filename);
+
+        // Step 1: Send filename to child
+        write(pipe1[1], filename, strlen(filename) + 1);
+
+        // Step 2: Receive file content from child
+        read(pipe2[0], buffer, sizeof(buffer));
+
+        // Step 3: Display it
+        printf("\n----- File Content (via child) -----\n");
+        printf("%s\n", buffer);
+        printf("-------------------------------------\n");
+
+        close(pipe1[1]);
+        close(pipe2[0]);
+
+        wait(NULL);
+    }
+
+    return 0;
+}
